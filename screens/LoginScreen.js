@@ -6,14 +6,18 @@ import { useNavigation } from '@react-navigation/native';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState(''); 
   const navigation = useNavigation();
+  const [isSignUp, setIsSignUp] = useState(false); 
 
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         navigation.navigate('Home');
       }
     });
+    return unsubscribe; 
   }, []);
 
   const handleSignUp = () => {
@@ -22,6 +26,18 @@ export default function LoginScreen() {
       .then((userCredentials) => {
         const user = userCredentials.user;
         console.log('Kullanıcı kaydedildi:', user.email);
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          firstName,
+          lastName,
+        };
+       
+        setEmail('');
+        setPassword('');
+        setFirstName('');
+        setLastName('');
+        setIsSignUp(false); 
       })
       .catch((error) => alert(error.message));
   };
@@ -32,6 +48,10 @@ export default function LoginScreen() {
       .then((userCredentials) => {
         const user = userCredentials.user;
         console.log('Kullanıcı giriş yaptı:', user.email);
+
+        setEmail('');
+        setPassword('');
+        setIsSignUp(false); 
       })
       .catch((error) => {
         switch (error.code) {
@@ -50,6 +70,22 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <View style={styles.inputContainer}>
+        {isSignUp && (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="İsim"
+              value={firstName}
+              onChangeText={(text) => setFirstName(text)}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Soyisim"
+              value={lastName}
+              onChangeText={(text) => setLastName(text)}
+            />
+          </>
+        )}
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -65,15 +101,28 @@ export default function LoginScreen() {
         />
       </View>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Giriş Yap</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleSignUp}
-          style={[styles.button, styles.outlineButton]}
-        >
-          <Text style={styles.outlineButtonText}>Kayıt Ol</Text>
-        </TouchableOpacity>
+        {!isSignUp ? (
+          <>
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Giriş Yap</Text>
+            </TouchableOpacity>
+            <Text style={styles.registerText}>
+              Hesabın yok mu? <Text style={styles.registerLink} onPress={() => setIsSignUp(true)}>Kaydol.</Text>
+            </Text>
+          </>
+        ) : (
+          <>
+            <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+              <Text style={styles.buttonText}>Kayıt Ol</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsSignUp(false)}
+              style={[styles.button, styles.outlineButton]}
+            >
+              <Text style={styles.outlineButtonText}>Giriş Yap</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -117,6 +166,15 @@ const styles = StyleSheet.create({
   outlineButtonText: {
     color: '#0782F9',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  registerText: {
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  registerLink: {
+    color: '#0782F9',
     fontWeight: '700',
   },
 });
